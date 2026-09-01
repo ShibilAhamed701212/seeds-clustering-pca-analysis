@@ -96,8 +96,8 @@ Make sure you have Python 3.8+ installed on your system.
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/ShibilAhamed701212/seeds-unsupervised-learning.git
-cd seeds-unsupervised-learning
+git clone https://github.com/ShibilAhamed701212/seeds-clustering-pca-analysis.git
+cd seeds-clustering-pca-analysis
 ```
 
 ### 2. Install Dependencies
