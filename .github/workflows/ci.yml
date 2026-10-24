@@ -26,3 +26,24 @@ jobs:
         env:
           MPLBACKEND: Agg
         run: jupyter nbconvert --to notebook --execute fcc_seeds_unsupervised.ipynb --output-dir "$RUNNER_TEMP"
+
+  minimum-versions:
+    # Runs the notebook with the lowest versions requirements.txt allows,
+    # so the ">=" floors stay accurate.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install minimum dependency versions
+        run: |
+          sed 's/>=/==/' requirements.txt > "$RUNNER_TEMP/min-requirements.txt"
+          pip install -r "$RUNNER_TEMP/min-requirements.txt"
+
+      - name: Execute notebook end to end
+        env:
+          MPLBACKEND: Agg
+        run: jupyter nbconvert --to notebook --execute fcc_seeds_unsupervised.ipynb --output-dir "$RUNNER_TEMP"

@@ -59,6 +59,7 @@ flowchart LR
     B --> E[7D K-Means Clustering]
     E --> F[PCA Dimensionality Reduction]
     F --> G[Cluster vs Ground Truth Comparison]
+    B --> I[Standardised 7D K-Means + Choosing K]
 ```
 
 1. **Data Ingestion**: Loading the whitespace-separated dataset into a Pandas DataFrame (`sep=r"\s+"`, because 11 rows in the UCI file use double tabs).
@@ -66,6 +67,7 @@ flowchart LR
 3. **Clustering ($K=3$)**: Partitioning instances into 3 distinct clusters using Scikit-Learn's `KMeans`.
 4. **PCA Projection**: Transforming 7D feature vectors into orthogonal 2D principal component space (`pca1`, `pca2`).
 5. **Evaluation**: Side-by-side plots of clusters vs. ground-truth classes, plus the Adjusted Rand Index for each clustering.
+6. **Standardised features & choosing K**: re-running the 7D clustering on standardised features, then scoring K = 2..8 with the elbow method and silhouette coefficient.
 
 ---
 
@@ -77,9 +79,14 @@ K-Means cluster ids are arbitrary (0, 1, 2) and do not line up with the class la
 | :--- | :--- | :--- |
 | K-Means, K=3 | `compactness`, `asymmetry` | 0.152 |
 | K-Means, K=3 | all 7 features (unscaled) | 0.717 |
+| K-Means, K=3 | all 7 features, standardised | 0.773 |
+
+Values are from scikit-learn 1.9.1. With the minimum versions in `requirements.txt` (scikit-learn 1.2.0) the 2D score is 0.156; the 7D score is unchanged.
 
 - **2D clustering** on `compactness` vs `asymmetry` gives a weak baseline: those two features alone barely separate the varieties.
 - **7D clustering** recovers most of the variety structure.
+- **Standardising** the features (zero mean, unit variance) before clustering improves agreement, because unscaled `area` and `perimeter` otherwise dominate the distances.
+- **Choosing K**: the notebook scores K = 2..8 on the standardised features. The silhouette coefficient peaks at K = 2 (0.466; at K = 3 it is 0.401), and the inertia curve flattens after K = 3. At K = 2 most Kama and Canadian kernels fall into one cluster, so the data alone does not cleanly separate all three varieties. The main analysis keeps K = 3, the known number of varieties.
 - **PCA** projects the 7 features to 2 components (`pca1`, `pca2`) so the 7D clusters can be plotted next to the true classes:
 
 | K-Means clusters (7D, shown in PCA space) | True varieties (PCA space) |
@@ -109,7 +116,7 @@ Both images are taken directly from the executed notebook's outputs.
 ## 🚀 Getting Started
 
 ### Prerequisites
-Python 3.8 or newer. The notebook is executed in CI on Python 3.12 with the latest versions allowed by `requirements.txt`; the minimum versions listed there have not been tested.
+Python 3.10 or newer. CI runs the notebook on Python 3.12 with the latest versions allowed by `requirements.txt`, and on Python 3.10 with exactly the minimum versions listed there.
 
 ### 1. Clone the Repository
 ```bash
@@ -146,14 +153,14 @@ ruff check .                      # lints the notebook cells
 jupyter nbconvert --to notebook --execute fcc_seeds_unsupervised.ipynb --output-dir /tmp
 ```
 
-The build fails if any cell raises an error.
+A second job (`minimum-versions`) installs exactly the lowest versions in `requirements.txt` on Python 3.10 and executes the notebook again. The build fails if any cell raises an error in either job.
 
 ---
 
 ## ⚠️ Known Limitations
 
-- **Features are not standardised** before K-Means and PCA. `area` and `perimeter` have far larger ranges than `compactness`, so they dominate the distances and the first principal component. Standardising the features (e.g. `StandardScaler`) raised the 7D ARI to about 0.77 in a separate check; the notebook keeps the original unscaled analysis.
-- **K is fixed at 3** from prior knowledge of the three varieties; the notebook does not choose K from the data (elbow or silhouette).
+- **The main 7D clustering and the PCA plots use unscaled features**, which is the original analysis. The standardised comparison (ARI 0.773) is a separate section; PCA has not been redone on standardised features.
+- **K = 3 comes from prior knowledge**, not from the data: the silhouette coefficient favours K = 2 (see Choosing K).
 - PCA is fitted on all 7 features for visualisation only; clustering is not re-run in PCA space.
 
 ---
